@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepPCB Self-Correcting 3D Circuit Simulator</title>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div>
+      <h1>⚡ DeepPCB 3D Self-Corrector</h1>
+      <p class="subtitle">Detects all 6 DeepPCB flaw classes, simulates signal interruption, and self-corrects the 3D circuit.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">1. Input &amp; Self-Correction Controls</div>
+      <div id="upload-zone">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/bmp" />
+        <div style="font-size: 0.83rem; font-weight: 600; color: #fff;">Click or Drop DeepPCB Image</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Supports 640×640 _test.jpg / .png</div>
+      </div>
+
+      <button id="self-correct-btn">✨ Self-Correct Circuit (Fix All Flaws)</button>
+
+      <div class="btn-row">
+        <button id="demo-btn">🧪 Load 6-Flaw Demo PCB</button>
+        <button id="reset-cam-btn">🎥 Reset View</button>
+      </div>
+      <div id="status-bar">Initializing 3D simulator...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2. DeepPCB 6-Class Current &amp; Fix Legend</div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span class="swatch" style="background:#ff1133; color:#ff1133;"></span>
+          <strong>1. Open</strong>
+          <span class="legend-desc">Stop → Solder Jumper Bridge</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#00ffff; color:#00ffff;"></span>
+          <strong>2. Short</strong>
+          <span class="legend-desc">Arc → Laser Isolation Cut</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#ff8800; color:#ff8800;"></span>
+          <strong>3. Mousebite</strong>
+          <span class="legend-desc">Bottleneck → Copper Fillet</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#ffdd00; color:#ffdd00;"></span>
+          <strong>4. Spur</strong>
+          <span class="legend-desc">Bounce → Etch Spike Off</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#ff5500; color:#ff5500;"></span>
+          <strong>5. Pinhole</strong>
+          <span class="legend-desc">Split → Fill Void Patch</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#aa00ff; color:#aa00ff;"></span>
+          <strong>6. Spurious Cu</strong>
+          <span class="legend-desc">Parasitic → Mill Island Off</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1; display:flex; flex-direction:column;">
+      <div class="card-title">3. Flaw Diagnostics &amp; Self-Repair Log</div>
+      <div id="defect-list">
+        <div style="font-size:0.78rem; color:var(--text-muted);">Loading demo board...</div>
+      </div>
+    </div>
+  </aside>
+
+  <main id="viewport">
+    <div id="mode-banner">🚨 DEFECTIVE CIRCUIT SIMULATION (ERRORS ACTIVE)</div>
+    <div id="hud-overlay">
+      Left Click: Rotate &nbsp;|&nbsp; Right Click: Pan &nbsp;|&nbsp; Scroll: Zoom
+    </div>
+  </main>
+
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

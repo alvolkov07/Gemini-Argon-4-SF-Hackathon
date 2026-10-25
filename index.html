@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepPCB Self-Correcting 3D Circuit Simulator</title>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-bg: rgba(16, 23, 38, 0.94);
+      --border: rgba(255, 255, 255, 0.1);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #00e5ff;
+      --healed: #10b981;
+      --danger: #ff2244;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #sidebar {
+      width: 385px;
+      height: 100vh;
+      background: var(--panel-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      gap: 14px;
+      overflow-y: auto;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+
+    h1 {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px;
+    }
+
+    .card-title {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 9px;
+      font-weight: 600;
+    }
+
+    #upload-zone {
+      border: 1.5px dashed rgba(0, 229, 255, 0.4);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(0, 229, 255, 0.03);
+    }
+
+    #upload-zone:hover {
+      border-color: var(--accent);
+      background: rgba(0, 229, 255, 0.08);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 9px;
+    }
+
+    button {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 8px 11px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    #self-correct-btn {
+      width: 100%;
+      margin-top: 9px;
+      padding: 11px 14px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      border: 1px solid rgba(16, 185, 129, 0.6);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.3);
+      color: #ffffff;
+    }
+
+    #self-correct-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    #self-correct-btn.is-fixed {
+      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+      border-color: rgba(239, 68, 68, 0.6);
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.3);
+    }
+
+    #status-bar {
+      font-size: 0.78rem;
+      margin-top: 8px;
+      color: var(--accent);
+      min-height: 18px;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.77rem;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .legend-desc {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    #defect-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 230px;
+      overflow-y: auto;
+    }
+
+    .defect-item {
+      padding: 10px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 4px solid #ff1133;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.15s;
+      font-size: 0.8rem;
+    }
+
+    .defect-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateX(3px);
+    }
+
+    .defect-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.74rem;
+    }
+
+    .defect-item-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    #viewport {
+      flex: 1;
+      height: 100vh;
+      position: relative;
+    }
+
+    #mode-banner {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: rgba(220, 38, 38, 0.22);
+      border: 1px solid rgba(255, 34, 68, 0.6);
+      color: #fecdd3;
+      z-index: 5;
+      backdrop-filter: blur(8px);
+    }
+
+    #mode-banner.fixed-mode {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: rgba(16, 185, 129, 0.7);
+      color: #a7f3d0;
+    }
+
+    #hud-overlay {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+  <aside id="sidebar">
+    <div>
+      <h1>⚡ DeepPCB 3D Self-Corrector</h1>
+      <p class="subtitle">Detects all 6 DeepPCB flaw classes, simulates signal interruption, and self-corrects the 3D circuit.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">1. Input &amp; Self-Correction Controls</div>
+      <div id="upload-zone">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/bmp" />
+        <div style="font-size: 0.83rem; font-weight: 600; color: #fff;">Click or Drop DeepPCB Image</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">Supports 640×640 _test.jpg / .png</div>
+      </div>
+
+      <button id="self-correct-btn">✨ Self-Correct Circuit (Fix All Flaws)</button>
+
+      <div class="btn-row">
+        <button id="demo-btn">🧪 Load 6-Flaw Demo PCB</button>
+        <button id="reset-cam-btn">🎥 Reset View</button>
+      </div>
+      <div id="status-bar">Initializing 3D simulator...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2. DeepPCB 6-Class Current &amp; Fix Legend</div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span class="swatch" style="background:#ff1133; color:#ff1133;"></span>
+          <strong>1. Open</strong>
+          <span class="legend-desc">Stop → Solder Jumper Bridge</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#00ffff; color:#00ffff;"></span>
+          <strong>2. Short</strong>
+          <span class="legend-desc">Arc → Laser Isolation Cut</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#ff8800; color:#ff8800;"></span>
+          <strong>3. Mousebite</strong>
+          <span class="legend-desc">Bottleneck → Copper Fillet</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#ffdd00; color:#ffdd00;"></span>
+          <strong>4. Spur</strong>
+          <span class="legend-desc">Bounce → Etch Spike Off</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#ff5500; color:#ff5500;"></span>
+          <strong>5. Pinhole</strong>
+          <span class="legend-desc">Split → Fill Void Patch</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background:#aa00ff; color:#aa00ff;"></span>
+          <strong>6. Spurious Cu</strong>
+          <span class="legend-desc">Parasitic → Mill Island Off</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1; display:flex; flex-direction:column;">
+      <div class="card-title">3. Flaw Diagnostics &amp; Self-Repair Log</div>
+      <div id="defect-list">
+        <div style="font-size:0.78rem; color:var(--text-muted);">Loading demo board...</div>
+      </div>
+    </div>
+  </aside>
+
+  <main id="viewport">
+    <div id="mode-banner">🚨 DEFECTIVE CIRCUIT SIMULATION (ERRORS ACTIVE)</div>
+    <div id="hud-overlay">
+      Left Click: Rotate &nbsp;|&nbsp; Right Click: Pan &nbsp;|&nbsp; Scroll: Zoom
+    </div>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
